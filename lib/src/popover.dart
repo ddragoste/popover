@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'popover_direction.dart';
 import 'popover_item.dart';
 import 'popover_transition.dart';
+import 'utils/build_context_extension.dart';
 import 'utils/popover_utils.dart';
 
 /// A popover is a transient view that appears above other content onscreen
@@ -57,6 +58,11 @@ import 'utils/popover_utils.dart';
 /// position on X axis. It can be positive or negative number.
 /// This argument defaults to 0.
 ///
+/// The `attachRect` argument provides global positioning for the popover
+/// content. If null, it is calculated using [RenderBox] of provided context,
+/// offset with [arrowDxOffset], [arrowDyOffset], [contentDyOffset],
+/// [contentDxOffset].
+///
 /// The `barrierDismissible` argument is used to determine whether this route
 /// can be dismissed by tapping the modal barrier. This argument defaults
 /// to true.
@@ -96,6 +102,7 @@ Future<T?> showPopover<T extends Object?>({
   double arrowDyOffset = 0,
   double contentDyOffset = 0,
   double contentDxOffset = 0,
+  Rect? attachRect,
   bool barrierDismissible = true,
   double? width,
   double? height,
@@ -116,6 +123,15 @@ Future<T?> showPopover<T extends Object?>({
           BoxConstraints.tightFor(width: width, height: height)
       : constraints;
 
+  final _attachRect = attachRect ??
+      _popoverAttachRectFrom(
+        context,
+        arrowDxOffset: arrowDxOffset,
+        arrowDyOffset: arrowDyOffset,
+        contentDxOffset: contentDxOffset,
+        contentDyOffset: contentDyOffset,
+      );
+
   return Navigator.of(context, rootNavigator: true).push<T>(
     RawDialogRoute<T>(
       pageBuilder: (_, animation, __) {
@@ -133,10 +149,7 @@ Future<T?> showPopover<T extends Object?>({
             arrowWidth: arrowWidth,
             arrowHeight: arrowHeight,
             constraints: constraints,
-            arrowDxOffset: arrowDxOffset,
-            arrowDyOffset: arrowDyOffset,
-            contentDyOffset: contentDyOffset,
-            contentDxOffset: contentDxOffset,
+            attachRect: _attachRect,
             key: key,
           ),
         );
@@ -159,5 +172,23 @@ Future<T?> showPopover<T extends Object?>({
             : popoverTransitionBuilder(animation, child);
       },
     ),
+  );
+}
+
+Rect _popoverAttachRectFrom(
+  BuildContext context, {
+  double arrowDxOffset = 0,
+  double arrowDyOffset = 0,
+  double contentDyOffset = 0,
+  double contentDxOffset = 0,
+}) {
+  final offset = BuildContextExtension.getWidgetLocalToGlobal(context)!;
+  final bounds = BuildContextExtension.getWidgetBounds(context)!;
+
+  return Rect.fromLTWH(
+    offset.dx + arrowDxOffset,
+    offset.dy + arrowDyOffset,
+    bounds.width + contentDxOffset,
+    bounds.height + contentDyOffset,
   );
 }

@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import '../popover.dart';
 import 'popover_context.dart';
 import 'popover_position_widget.dart';
-import 'utils/build_context_extension.dart';
 
 class PopoverItem extends StatefulWidget {
   final Widget child;
@@ -16,11 +15,8 @@ class PopoverItem extends StatefulWidget {
   final double arrowHeight;
   final BoxConstraints? constraints;
   final BuildContext context;
-  final double arrowDxOffset;
-  final double arrowDyOffset;
-  final double contentDyOffset;
-  final double contentDxOffset;
   final PopoverTransition transition;
+  final Rect attachRect;
 
   const PopoverItem({
     required this.child,
@@ -28,16 +24,13 @@ class PopoverItem extends StatefulWidget {
     required this.transition,
     required this.animation,
     required this.arrowHeight,
+    required this.attachRect,
     this.backgroundColor,
     this.direction,
     this.radius,
     this.boxShadow,
     this.arrowWidth,
     this.constraints,
-    this.arrowDxOffset = 0,
-    this.arrowDyOffset = 0,
-    this.contentDyOffset = 0,
-    this.contentDxOffset = 0,
     super.key,
   });
 
@@ -46,7 +39,6 @@ class PopoverItem extends StatefulWidget {
 }
 
 class _PopoverItemState extends State<PopoverItem> {
-  late Rect _attachRect;
   late BoxConstraints _constraints;
 
   @override
@@ -54,7 +46,7 @@ class _PopoverItemState extends State<PopoverItem> {
     return Stack(
       children: [
         PopoverPositionWidget(
-          attachRect: _attachRect,
+          attachRect: widget.attachRect,
           constraints: _constraints,
           direction: widget.direction,
           arrowHeight: widget.arrowHeight,
@@ -62,7 +54,7 @@ class _PopoverItemState extends State<PopoverItem> {
             animation: widget.animation,
             builder: (context, child) {
               return PopoverContext(
-                attachRect: _attachRect,
+                attachRect: widget.attachRect,
                 animation: widget.animation,
                 radius: widget.radius,
                 backgroundColor: widget.backgroundColor,
@@ -87,17 +79,8 @@ class _PopoverItemState extends State<PopoverItem> {
   @override
   void didChangeDependencies() {
     _configureConstraints();
-    WidgetsBinding.instance.addPostFrameCallback(
-      (_) => setState(_configureRect),
-    );
 
     super.didChangeDependencies();
-  }
-
-  @override
-  void initState() {
-    _configureRect();
-    super.initState();
   }
 
   void _configureConstraints() {
@@ -133,20 +116,5 @@ class _PopoverItemState extends State<PopoverItem> {
     }
 
     _constraints = constraints;
-  }
-
-  void _configureRect() {
-    if (!widget.context.mounted) return;
-    final offset = BuildContextExtension.getWidgetLocalToGlobal(widget.context);
-    final bounds = BuildContextExtension.getWidgetBounds(widget.context);
-
-    if (offset != null && bounds != null) {
-      _attachRect = Rect.fromLTWH(
-        offset.dx + (widget.arrowDxOffset),
-        offset.dy + (widget.arrowDyOffset),
-        bounds.width + (widget.contentDxOffset),
-        bounds.height + (widget.contentDyOffset),
-      );
-    }
   }
 }
